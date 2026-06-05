@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch Lernen - Lückentext</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --text-color: #333;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 650px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1.4rem;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #555;
+            font-size: 1rem;
+            margin-bottom: 25px;
+            background: #eef4fa;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        /* Satz-Container, in dem Text und Dropdowns fließen */
+        .sentence-card {
+            background: #fff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            font-size: 1.25rem;
+            color: #2d3748;
+            margin-bottom: 25px;
+            text-align: left;
+            word-wrap: break-word;
+        }
+
+        /* Styling für die Dropdown-Menüs im Text */
+        .gap-select {
+            display: inline-block;
+            font-size: 1.15rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            margin: 0 5px;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            background-color: #fff;
+            color: var(--primary-color);
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            max-width: 100%;
+        }
+
+        .gap-select:hover:not(:disabled) {
+            border-color: var(--primary-color);
+        }
+
+        /* Zustand bei richtiger Antwort */
+        .gap-select.correct {
+            border-color: var(--success-color);
+            background-color: #e8f8f0;
+            color: #27ae60;
+            cursor: default;
+        }
+
+        /* Zustand bei falscher Antwort */
+        .gap-select.wrong {
+            border-color: var(--error-color);
+            background-color: #fde8e8;
+            color: var(--error-color);
+            animation: shake 0.3s ease;
+        }
+
+        /* Feedback-Nachricht */
+        .feedback-zone {
+            text-align: center;
+            font-weight: bold;
+            min-height: 25px;
+            margin-bottom: 20px;
+            font-size: 1.05rem;
+        }
+        .feedback-zone.success { color: var(--success-color); }
+        .feedback-zone.error { color: var(--error-color); }
+
+        /* Buttons */
+        .action-zone {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: center;
+        }
+
+        .btn-reset {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-reset:hover {
+            background-color: #cbd5e1;
+        }
+
+        .btn-next {
+            background-color: var(--primary-color);
+            color: white;
+            display: none; /* Sichtbar wenn alle Lücken korrekt */
+        }
+
+        .btn-next:hover {
+            background-color: #357abd;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Responsive Anpassungen für Smartphones */
+        @media (max-width: 500px) {
+            .quiz-container { padding: 20px; }
+            .sentence-card { 
+                font-size: 1.1rem; 
+                padding: 15px; 
+                line-height: 2.2; /* Mehr Zeilenabstand für Touch-Fläche */
+            }
+            .gap-select { 
+                font-size: 1rem; 
+                padding: 2px 6px; 
+                margin: 4px 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h2>Lückentext ausfüllen</h2>
+    <div class="progress-text" id="progress-info">Beispiel 1 von 3</div>
+    <div class="instruction" id="instruction-text">Wähle für jede Lücke das passende russische Wort aus!</div>
+
+    <!-- Hier wird der Satz dynamisch hineingeneriert -->
+    <div class="sentence-card" id="sentence-box"></div>
+
+    <div class="feedback-zone" id="feedback-box"></div>
+
+    <div class="action-zone">
+        <button class="btn btn-reset" onclick="resetCurrentExercise()">Neustart</button>
+        <button class="btn btn-next" id="next-btn" onclick="nextExercise()">Nächste Aufgabe</button>
+    </div>
+</div>
+
+<script>
+    // 3 verschiedene Beispielsätze basierend auf der Anleitung
+    const exercises = [
+        {
+            // Der Hauptbeispielsatz aus dem Transkript aufgeteilt in Fragmente
+            fragments: [
+                "Завтра у меня будет две ", 
+                " Lücke 1 ", 
+                ", потом у меня будет ", 
+                " Lücke 2 ", 
+                ", и потом еще две пары."
+            ],
+            gaps: [
+                { correct: "пары", options: ["пары", "окна", "двери"] },
+                { correct: "окно", options: ["дверь", "окно", "класс"] }
+            ],
+            hint: "Kontext: Morgen habe ich zwei Doppelstunden, danach eine Freistunde und dann noch zwei Doppelstunden."
+        },
+        {
+            fragments: [
+                "В русской ", 
+                " Lücke 1 ", 
+                " или в русском университете вы часто можете слышать это ", 
+                " Lücke 2 ", 
+                "."
+            ],
+            gaps: [
+                { correct: "школе", options: ["комнате", "доме", "школе"] },
+                { correct: "слово", options: ["слово", "окно", "утро"] }
+            ],
+            hint: "Kontext: In der russischen Schule oder an der russischen Universität könnt ihr dieses Wort oft hören."
+        },
+        {
+            fragments: [
+                "Это значит, что после двух пар у этого преподавателя будет большой ", 
+                " Lücke 1 ", 
+                "."
+            ],
+            gaps: [
+                { correct: "перерыв", options: ["перерыв", "урок", "день"] }
+            ],
+            hint: "Kontext: Das bedeutet, dass der Lehrer nach zwei Doppelstunden eine große Pause haben wird."
+        }
+    ];
+
+    let currentExerciseIndex = 0;
+    let gapStates = []; // Speichert, welche Lücken bereits korrekt gelöst wurden
+
+    function loadExercise() {
+        const currentData = exercises[currentExerciseIndex];
+        document.getElementById("progress-info").innerText = `Beispiel ${currentExerciseIndex + 1} von ${exercises.length}`;
+        document.getElementById("instruction-text").innerText = currentData.hint;
+        document.getElementById("feedback-box").innerText = "";
+        document.getElementById("feedback-box").className = "feedback-zone";
+        document.getElementById("next-btn").style.display = "none";
+
+        const sentenceBox = document.getElementById("sentence-box");
+        sentenceBox.innerHTML = "";
+        
+        gapStates = new Array(currentData.gaps.length).fill(false);
+        let gapCounter = 0;
+
+        // Fragmente und Dropdowns verweben
+        currentData.fragments.forEach(fragment => {
+            if (fragment.startsWith(" Lücke ")) {
+                const gapIndex = gapCounter;
+                const gapData = currentData.gaps[gapIndex];
+
+                const select = document.createElement("select");
+                select.className = "gap-select";
+                select.id = `gap-${gapIndex}`;
+                select.onchange = () => checkGap(select, gapIndex, gapData.correct);
+
+                // Standardplatzhalter einfügen
+                const defaultOpt = document.createElement("option");
+                defaultOpt.value = "";
+                defaultOpt.innerText = "___";
+                defaultOpt.disabled = true;
+                defaultOpt.selected = true;
+                select.appendChild(defaultOpt);
+
+                // Optionen mischen und hinzufügen
+                const shuffledOptions = [...gapData.options].sort(() => Math.random() - 0.5);
+                shuffledOptions.forEach(optText => {
+                    const opt = document.createElement("option");
+                    opt.value = optText;
+                    opt.innerText = optText;
+                    select.appendChild(opt);
+                });
+
+                sentenceBox.appendChild(select);
+                gapCounter++;
+            } else {
+                // Normaler Text-Teil
+                const textNode = document.createTextNode(fragment);
+                sentenceBox.appendChild(textNode);
+            }
+        });
+    }
+
+    function checkGap(selectElement, gapIndex, correctAnswer) {
+        const selectedValue = selectElement.value;
+        const feedbackBox = document.getElementById("feedback-box");
+
+        // Sofortprüfung bei jeder Auswahl
+        if (selectedValue === correctAnswer) {
+            selectElement.className = "gap-select correct";
+            selectElement.disabled = true; // Richtig gelöste Lücke einfrieren
+            gapStates[gapIndex] = true;
+            
+            feedbackBox.innerText = "✓ Lücke richtig ausgefüllt!";
+            feedbackBox.className = "feedback-zone success";
+        } else {
+            selectElement.className = "gap-select wrong";
+            gapStates[gapIndex] = false;
+            
+            feedbackBox.innerText = "⚡ Das Wort passt syntaktisch oder inhaltlich nicht. Versuch es noch mal!";
+            feedbackBox.className = "feedback-zone error";
+
+            // Schüttelanimation nach 300ms zurücksetzen, damit Fehler erneut signalisiert werden kann
+            setTimeout(() => {
+                if (selectElement.className === "gap-select wrong") {
+                    selectElement.classList.remove("wrong");
+                }
+            }, 300);
+        }
+
+        // Prüfen, ob alle Lücken der aktuellen Übung gefüllt sind
+        if (gapStates.every(state => state === true)) {
+            feedbackBox.innerText = "🎉 Alle Lücken perfekt geschlossen!";
+            feedbackBox.className = "feedback-zone success";
+            document.getElementById("next-btn").style.display = "block";
+        }
+    }
+
+    function resetCurrentExercise() {
+        loadExercise();
+    }
+
+    function nextExercise() {
+        currentExerciseIndex++;
+        if (currentExerciseIndex < exercises.length) {
+            loadExercise();
+        } else {
+            alert("Hervorragend! Du hast alle Lückentexte gemeistert. 🌟");
+            currentExerciseIndex = 0;
+            loadExercise();
+        }
+    }
+
+    // Initialer Start beim Laden der Seite
+    window.onload = loadExercise;
+</script>
+
+</body>
+</html>
