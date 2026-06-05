@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch Lernen - Richtig oder Falsch?</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --text-color: #333;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1.4rem;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .statement-card {
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            font-size: 1.15rem;
+            font-weight: 500;
+            text-align: center;
+            color: #1e293b;
+            margin-bottom: 25px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-grid {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        /* Völlig neutrale Basis-Buttons */
+        .btn-choice {
+            flex: 1;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #fff;
+            color: #475569;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        /* NEUTRALER HOVER: Zeigt KEINE Farbtendenz vor dem Klick! */
+        .btn-choice:hover:not(:disabled) {
+            border-color: #94a3b8;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        /* Erst nach dem Klick per JavaScript zugewiesene Statusfarben */
+        .btn-choice.selected-correct {
+            background-color: var(--success-color) !important;
+            border-color: var(--success-color) !important;
+            color: white !important;
+        }
+
+        .btn-choice.selected-wrong {
+            background-color: var(--error-color) !important;
+            border-color: var(--error-color) !important;
+            color: white !important;
+        }
+
+        /* Passive Hilfsanzeige für die richtige Option bei einem Fehler */
+        .btn-choice.show-actual-correct {
+            border-color: var(--success-color) !important;
+            background-color: #e8f8f0 !important;
+            color: #27ae60 !important;
+        }
+
+        .feedback-box {
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            display: none; 
+            border-left: 4px solid #cbd5e1;
+        }
+        .feedback-box.correct { border-left-color: var(--success-color); }
+        .feedback-box.wrong { border-left-color: var(--error-color); }
+
+        .feedback-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .action-zone {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-control {
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: center;
+        }
+
+        .btn-reset {
+            background-color: #e2e8f0;
+            color: #475569;
+            flex: 1;
+        }
+
+        .btn-reset:hover {
+            background-color: #cbd5e1;
+        }
+
+        .btn-next {
+            background-color: var(--primary-color);
+            color: white;
+            flex: 2;
+            display: none; 
+        }
+
+        .btn-next:hover {
+            background-color: #357abd;
+        }
+
+        @media (max-width: 480px) {
+            .quiz-container { padding: 15px; }
+            .statement-card { font-size: 1rem; padding: 15px; min-height: 80px; }
+            .btn-choice { padding: 12px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h2>Richtig oder Falsch?</h2>
+    <div class="progress-text" id="progress-info">Frage 1 von 6</div>
+
+    <div class="statement-card" id="statement-text">Lade Aufgabe...</div>
+
+    <div class="btn-grid">
+        <button class="btn-choice" id="btn-true" onclick="submitAnswer(true)">Richtig</button>
+        <button class="btn-choice" id="btn-false" onclick="submitAnswer(false)">Falsch</button>
+    </div>
+
+    <div class="feedback-box" id="feedback-zone">
+        <div class="feedback-title" id="feedback-status">Ergebnis</div>
+        <div id="feedback-text">Erklärungstext</div>
+    </div>
+
+    <div class="action-zone">
+        <button class="btn-control btn-reset" onclick="restartQuiz()">Neustart</button>
+        <button class="btn-control btn-next" id="next-btn" onclick="nextQuestion()">Nächste Frage</button>
+    </div>
+</div>
+
+<script>
+    const quizQuestions = [
+        {
+            statement: "Das Wort окно bedeutet in der Schule immer, dass das Fenster geputzt werden muss.",
+            isTrue: false,
+            explanation: "In der Schule oder Uni meint 'окно' umgangssprachlich eine Freistunde im Stundenplan."
+        },
+        {
+            statement: "Ein окно beschreibt eine ungewollte Pause oder Freistunde im Stundenplan.",
+            isTrue: true,
+            explanation: "Wenn zwischen zwei Kursen eine Lücke im Plan klafft, nennt man das 'окно'."
+        },
+        {
+            statement: "Das Wort пары beschreibt Unterrichtseinheiten von meist 90 Minuten.",
+            isTrue: true,
+            explanation: "'Пара' steht im russischen Bildungsalltag für eine Doppelstunde (wörtlich: ein Paar)."
+        },
+        {
+            statement: "Wenn ein russischer Dozent sagt: 'Завтра у меня окно', meint er, dass er morgen frei hat und gar nicht zur Arbeit kommt.",
+            isTrue: false,
+            explanation: "Er hat lediglich eine Freistunde zwischen seinen anderen Lehrveranstaltungen."
+        },
+        {
+            statement: "Das Wort окно hat im Russischen ausschließlich eine einzige Bedeutung.",
+            isTrue: false,
+            explanation: "Neben der normalen Alltagsbedeutung (Fenster) hat es im Bildungsbereich die Sonderbedeutung der Freistunde."
+        },
+        {
+            statement: "Der Satz 'Завтра у меня будет две пары, потом окно und потом еще две пары' beschreibt insgesamt 4 Doppelstunden Unterricht mit einer großen Pause dazwischen.",
+            isTrue: true,
+            explanation: "Zwei Doppelstunden vorher, zwei nachher, und dazwischen liegt die Freistunde."
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let hasAnswered = false;
+
+    function loadQuestion() {
+        hasAnswered = false;
+        const currentData = quizQuestions[currentQuestionIndex];
+
+        document.getElementById("progress-info").innerText = `Frage ${currentQuestionIndex + 1} von ${quizQuestions.length}`;
+        document.getElementById("statement-text").innerText = currentData.statement;
+
+        const btnTrue = document.getElementById("btn-true");
+        const btnFalse = document.getElementById("btn-false");
+        
+        // Vollständiger Reset auf die neutrale CSS-Klasse
+        btnTrue.className = "btn-choice";
+        btnFalse.className = "btn-choice";
+        btnTrue.disabled = false;
+        btnFalse.disabled = false;
+
+        document.getElementById("feedback-zone").style.display = "none";
+        document.getElementById("next-btn").style.display = "none";
+    }
+
+    function submitAnswer(userChoice) {
+        if (hasAnswered) return; 
+        hasAnswered = true;
+
+        const currentData = quizQuestions[currentQuestionIndex];
+        const isCorrect = (userChoice === currentData.isTrue);
+
+        const btnTrue = document.getElementById("btn-true");
+        const btnFalse = document.getElementById("btn-false");
+        const feedbackZone = document.getElementById("feedback-zone");
+        const feedbackStatus = document.getElementById("feedback-status");
+        const feedbackText = document.getElementById("feedback-text");
+
+        btnTrue.disabled = true;
+        btnFalse.disabled = true;
+
+        // Einfärbung erfolgt jetzt STRENG erst hier nach dem Klickevent
+        if (userChoice === true) {
+            btnTrue.classList.add(isCorrect ? "selected-correct" : "selected-wrong");
+        } else {
+            btnFalse.classList.add(isCorrect ? "selected-correct" : "selected-wrong");
+        }
+
+        // Richtige Antwort dezent aufdecken, falls der User falsch lag
+        if (!isCorrect) {
+            if (currentData.isTrue === true) btnTrue.classList.add("show-actual-correct");
+            if (currentData.isTrue === false) btnFalse.classList.add("show-actual-correct");
+        }
+
+        feedbackZone.style.display = "block";
+        feedbackText.innerText = currentData.explanation;
+
+        if (isCorrect) {
+            feedbackStatus.innerText = "✓ Richtig!";
+            feedbackZone.className = "feedback-box correct";
+        } else {
+            feedbackStatus.innerText = "⚡ Nicht ganz!";
+            feedbackZone.className = "feedback-box wrong";
+        }
+
+        document.getElementById("next-btn").style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizQuestions.length) {
+            loadQuestion();
+        } else {
+            alert("🎉 Perfekt! Du hast alle Aussagen erfolgreich geprüft und das Thema gemeistert.");
+            restartQuiz();
+        }
+    }
+
+    function restartQuiz() {
+        currentQuestionIndex = 0;
+        loadQuestion();
+    }
+
+    window.onload = loadQuestion;
+</script>
+
+</body>
+</html>
