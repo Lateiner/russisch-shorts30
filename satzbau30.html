@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch Lernen - Schüttelsatz</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --text-color: #333;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            width: 100%;
+            max-width: 650px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1.4rem;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #555;
+            font-size: 1rem;
+            margin-bottom: 25px;
+            background: #eef4fa;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        /* Zielbereich für den fertigen Satz */
+        .target-area {
+            background-color: #fafbfc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            min-height: 80px;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-content: flex-start;
+            margin-bottom: 25px;
+            transition: all 0.2s ease;
+        }
+
+        /* Bereich für die durcheinandergewürfelten Wörter */
+        .source-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            min-height: 80px;
+            margin-bottom: 20px;
+        }
+
+        /* Wort-Bausteine */
+        .word-tile {
+            background-color: #fff;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            transition: all 0.15s ease;
+        }
+
+        .word-tile:hover:not(.disabled) {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .word-tile.correct-placed {
+            background-color: #e8f8f0;
+            border-color: var(--success-color);
+            color: #27ae60;
+            cursor: default;
+        }
+
+        .word-tile.wrong-placed {
+            background-color: #fde8e8;
+            border-color: var(--error-color);
+            color: var(--error-color);
+            animation: shake 0.3s ease;
+        }
+
+        .word-tile.disabled {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Steuerungstasten */
+        .action-zone {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: center;
+        }
+
+        .btn-reset {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-reset:hover {
+            background-color: #cbd5e1;
+        }
+
+        .btn-next {
+            background-color: var(--success-color);
+            color: white;
+            display: none; /* Wird erst eingeblendet, wenn Satz komplett */
+        }
+
+        .btn-next:hover {
+            background-color: #27ae60;
+        }
+
+        /* Schütteleffekt bei falscher Reihenfolge */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Responsivität für kleine Displays */
+        @media (max-width: 480px) {
+            h2 { font-size: 1.2rem; }
+            .instruction { font-size: 0.9rem; }
+            .word-tile {
+                padding: 8px 12px;
+                font-size: 1rem;
+                border-radius: 6px;
+            }
+            .target-area { min-height: 70px; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Satzbau-Trainer</h2>
+    <div class="progress-text" id="progress-info">Satz 1 von 6</div>
+    <div class="instruction" id="translation-hint">Bringe die Wörter in die richtige Reihenfolge!</div>
+
+    <!-- Hier landen die richtig geklickten Wörter -->
+    <div class="target-area" id="target-box"></div>
+
+    <!-- Hier liegen die gemischten Wörter zur Auswahl -->
+    <div class="source-area" id="source-box"></div>
+
+    <!-- Kontroll-Buttons -->
+    <div class="action-zone">
+        <button class="btn btn-reset" onclick="restartCurrentSentence()">Neustart</button>
+        <button class="btn btn-next" id="next-btn" onclick="nextSentence()">Nächster Satz</button>
+    </div>
+</div>
+
+<script>
+    // Die 6 didaktischen Sätze basierend auf der Anleitung
+    const sentences = [
+        {
+            // Der Originalsatz aus dem Transkript
+            correctArray: ["Завтра", "у", "меня", "будет", "две", "пары", "потом", "у", "меня", "будет", "окно", "и", "потом", "еще", "две", "пары"],
+            hint: "Übersetze: 'Morgen habe ich zwei Doppelstunden, danach habe ich eine Freistunde und dann noch mal zwei Doppelstunden.'"
+        },
+        {
+            correctArray: ["У", "меня", "сегодня", "окно"],
+            hint: "Übersetze: 'Ich habe heute eine Freistunde.'"
+        },
+        {
+            correctArray: ["В", "русской", "школе", "можно", "часто", "слышать", "это", "слово"],
+            hint: "Übersetze: 'In der russischen Schule kann man dieses Wort oft hören.'"
+        },
+        {
+            correctArray: ["У", "этого", "слова", "есть", "другое", "значение"],
+            hint: "Übersetze: 'Dieses Wort hat eine andere Bedeutung.'"
+        },
+        {
+            correctArray: ["Это", "значит", "что", "после", "двух", "пар", "будет", "большой", "перерыв"],
+            hint: "Übersetze: 'Das bedeutet, dass nach zwei Doppelstunden eine große Pause sein wird.'"
+        },
+        {
+            correctArray: ["Используете", "ли", "вы", "это", "слово", "в", "вашей", "речи"],
+            hint: "Übersetze: 'Benutzt ihr dieses Wort in eurer Sprache (Rede)?'"
+        }
+    ];
+
+    let currentSentenceIndex = 0;
+    let currentWordIndex = 0; // Welches Wort der korrekten Reihenfolge wird gerade gesucht?
+    let activeWords = [];
+
+    // Hilfsfunktion zum Mischen
+    function shuffle(array) {
+        let currentIndex = array.length, randomIndex;
+        while (currentIndex != 0) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+        return array;
+    }
+
+    function initSentence() {
+        currentWordIndex = 0;
+        document.getElementById("next-btn").style.display = "none";
+        document.getElementById("target-box").innerHTML = "";
+        
+        const currentData = sentences[currentSentenceIndex];
+        document.getElementById("progress-info").innerText = `Satz ${currentSentenceIndex + 1} von ${sentences.length}`;
+        document.getElementById("translation-hint").innerText = currentData.hint;
+
+        // Erstelle eine kopierte und gemischte Liste der Wörter mit eindeutigen IDs
+        // (Wichtig, falls Wörter wie "у" oder "меня" mehrfach im Satz vorkommen!)
+        activeWords = currentData.correctArray.map((word, idx) => {
+            return { text: word, originalPosition: idx };
+        });
+        
+        // Mischen der Kacheln
+        shuffle(activeWords);
+
+        const sourceBox = document.getElementById("source-box");
+        sourceBox.innerHTML = "";
+
+        activeWords.forEach(wordObj => {
+            const tile = document.createElement("div");
+            tile.className = "word-tile";
+            tile.innerText = wordObj.text;
+            tile.id = `tile-${wordObj.originalPosition}`;
+            tile.onclick = () => handleWordClick(wordObj, tile);
+            sourceBox.appendChild(tile);
+        });
+    }
+
+    function handleWordClick(wordObj, tileElement) {
+        // Falls das Wort bereits deaktiviert oder richtig platziert ist, nichts tun
+        if (tileElement.classList.contains("disabled") || tileElement.classList.contains("wrong-placed")) return;
+
+        const currentData = sentences[currentSentenceIndex];
+        const expectedWord = currentData.correctArray[currentWordIndex];
+
+        // SOFORT-FEEDBACK PRÜFUNG: Stimmt das angeklickte Wort mit dem erwarteten Wort überein?
+        if (wordObj.text === expectedWord) {
+            // Richtig geklickt!
+            tileElement.classList.add("disabled"); // Aus der Auswahl ausblenden
+            
+            // In den Zielbereich dauerhaft einfügen
+            const targetBox = document.getElementById("target-box");
+            const newTile = document.createElement("div");
+            newTile.className = "word-tile correct-placed";
+            newTile.innerText = wordObj.text;
+            targetBox.appendChild(newTile);
+
+            currentWordIndex++;
+
+            // Überprüfen, ob der Satz vollständig ist
+            if (currentWordIndex === currentData.correctArray.length) {
+                document.getElementById("next-btn").style.display = "block";
+            }
+        } else {
+            // Falsch geklickt! Sofortiges optisches Fehler-Feedback
+            tileElement.classList.add("wrong-placed");
+            
+            // Nach der Schüttel-Animation Fehler-Zustand entfernen, Wort bleibt klickbar
+            setTimeout(() => {
+                tileElement.classList.remove("wrong-placed");
+            }, 300);
+        }
+    }
+
+    // Funktion für den "Neustart"-Button (setzt nur den aktuellen Satz zurück)
+    function restartCurrentSentence() {
+        initSentence();
+    }
+
+    // Schaltet zum nächsten Satz weiter oder startet das Spiel von vorn
+    function nextSentence() {
+        currentSentenceIndex++;
+        if (currentSentenceIndex < sentences.length) {
+            initSentence();
+        } else {
+            // Gesamtes Spiel geschafft, von vorne beginnen
+            alert("🎉 Hervorragend! Du hast alle 6 Sätze fehlerfrei aufgebaut.");
+            currentSentenceIndex = 0;
+            initSentence();
+        }
+    }
+
+    // Initialer Start beim Laden der Seite
+    window.onload = initSentence;
+</script>
+
+</body>
+</html>
