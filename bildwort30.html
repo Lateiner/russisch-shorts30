@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch Lernen - Interaktive Zuordnung</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --text-color: #333;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            transition: all 0.3s ease;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .word-display {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .instruction {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        /* Flexbox für Desktop/Tablet, wird zu Block bei Smartphones */
+        .options-grid {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .option-card {
+            flex: 1;
+            background: #fff;
+            border: 3px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .option-emoji {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            user-select: none;
+        }
+
+        .option-text {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #555;
+        }
+
+        /* Feedback-Zustände */
+        .option-card.correct {
+            border-color: var(--success-color);
+            background-color: #e8f8f0;
+        }
+
+        .option-card.wrong {
+            border-color: var(--error-color);
+            background-color: #fde8e8;
+            opacity: 0.7;
+        }
+
+        .feedback-message {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            min-height: 30px;
+            margin-bottom: 20px;
+        }
+
+        .feedback-message.correct { color: var(--success-color); }
+        .feedback-message.wrong { color: var(--error-color); }
+
+        .btn-next {
+            display: block;
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: none; /* Erst nach Antwort anzeigen */
+        }
+
+        .btn-next:hover {
+            background-color: #357abd;
+        }
+
+        .result-screen {
+            text-align: center;
+            display: none;
+        }
+
+        .result-screen h2 {
+            color: var(--success-color);
+            margin-bottom: 15px;
+        }
+
+        /* Responsives Design für Smartphones (Screens kleiner als 500px) */
+        @media (max-width: 500px) {
+            body {
+                padding: 10px;
+            }
+            .quiz-container {
+                padding: 20px;
+            }
+            .options-grid {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .option-emoji {
+                font-size: 3.5rem;
+            }
+            .word-display {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <!-- Quiz-Ansicht -->
+    <div id="quiz-view">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+        <div class="word-display" id="word-target">окно</div>
+        <div class="instruction" id="question-text">Welches Bild zeigt die Bedeutung im Universitätsalltag?</div>
+        
+        <div class="options-grid">
+            <div class="option-card" onclick="checkAnswer(0)" id="option-0">
+                <div class="option-emoji" id="emoji-0">🪟</div>
+                <div class="option-text" id="text-0">Ein echtes Fenster</div>
+            </div>
+            <div class="option-card" onclick="checkAnswer(1)" id="option-1">
+                <div class="option-emoji" id="emoji-1">☕🗓️</div>
+                <div class="option-text" id="text-1">Eine Freistunde im Plan</div>
+            </div>
+        </div>
+
+        <div class="feedback-message" id="feedback"></div>
+        <button class="btn-next" id="btn-next" onclick="nextQuestion()">Nächste Aufgabe</button>
+    </div>
+
+    <!-- Ergebnis-Ansicht am Ende -->
+    <div class="result-screen" id="result-view">
+        <h2>Ausgezeichnet! 🎉</h2>
+        <p>Du hast alle Aufgaben erfolgreich gelöst und die Bedeutungen der Campus-Begriffe verstanden.</p>
+        <br>
+        <button class="btn-next" style="display:block;" onclick="restartQuiz()">Nochmal spielen</button>
+    </div>
+</div>
+
+<script>
+    // Die verschiedenen Beispiele basierend auf der Anleitung
+    const quizData = [
+        {
+            word: "окно",
+            question: "Welches Bild zeigt die Bedeutung von окно im Universitätsalltag?",
+            options: [
+                { emoji: "🪟", text: "Ein physisches Fenster am Gebäude" },
+                { emoji: "🗓️☕", text: "Eine Freistunde / Lücke im Stundenplan" }
+            ],
+            correct: 1, // Index des richtigen Elements
+            feedbackCorrect: "Richtig! В университете 'окно' — это перерыв. An der Uni ist das eine Freistunde.",
+            feedbackWrong: "Fast! Das ist zwar die normale Bedeutung, aber gesucht war die Bedeutung an der Uni."
+        },
+        {
+            word: "пары",
+            question: "Was verbirgt sich hinter diesem Begriff im russischen Bildungsalltag?",
+            options: [
+                { emoji: "👥", text: "Zwei Personen, die zusammenarbeiten" },
+                { emoji: "⏰⏳", text: "Doppelstunden von meist 90 Minuten" }
+            ],
+            correct: 1,
+            feedbackCorrect: "Super! 'Пара' bedeutet Paar, steht an der Uni aber für die Doppelstunde.",
+            feedbackWrong: "Nicht ganz. Im Alltag bedeutet es zwar Paar, im Stundenplan sind es aber Doppelstunden."
+        },
+        {
+            word: "Завтра у меня будет две пары, потом окно...",
+            question: "Was bedeutet dieser Satzanfang für die Person?",
+            options: [
+                { emoji: "🏢🚶", text: "Sie hat durchgehend ohne Pause Unterricht." },
+                { emoji: "☕🥪", text: "Sie hat nach 3 Stunden eine große Pause." }
+            ],
+            correct: 1,
+            feedbackCorrect: "Korrekt! Nach zwei Doppelstunden folgt die ersehnte Freistunde (окно).",
+            feedbackWrong: "Überlege noch mal: Nach den zwei Doppelstunden kommt doch ein 'окно'!"
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let hasAnswered = false;
+
+    function loadQuestion() {
+        hasAnswered = false;
+        const currentData = quizData[currentQuestionIndex];
+        
+        // UI aktualisieren
+        document.getElementById("word-target").innerText = currentData.word;
+        document.getElementById("question-text").innerText = currentData.question;
+        
+        // Fortschrittsbalken berechnen
+        const progressPercent = (currentQuestionIndex / quizData.length) * 100;
+        document.getElementById("progress").style.width = `${progressPercent}%`;
+
+        // Optionen befüllen
+        for (let i = 0; i < 2; i++) {
+            const card = document.getElementById(`option-${i}`);
+            card.className = "option-card"; // Klassen zurücksetzen
+            document.getElementById(`emoji-${i}`).innerText = currentData.options[i].emoji;
+            document.getElementById(`text-${i}`).innerText = currentData.options[i].text;
+        }
+
+        // Feedback und Button verstecken
+        document.getElementById("feedback").innerText = "";
+        document.getElementById("feedback").className = "feedback-message";
+        document.getElementById("btn-next").style.display = "none";
+    }
+
+    function checkAnswer(selectedIndex) {
+        if (hasAnswered) return; // Klicks nach der Entscheidung sperren
+        hasAnswered = true;
+
+        const currentData = quizData[currentQuestionIndex];
+        const feedbackElement = document.getElementById("feedback");
+
+        if (selectedIndex === currentData.correct) {
+            document.getElementById(`option-${selectedIndex}`).classList.add("correct");
+            feedbackElement.innerText = currentData.feedbackCorrect;
+            feedbackElement.classList.add("correct");
+        } else {
+            document.getElementById(`option-${selectedIndex}`).classList.add("wrong");
+            document.getElementById(`option-${currentData.correct}`).classList.add("correct");
+            feedbackElement.innerText = currentData.feedbackWrong;
+            feedbackElement.classList.add("wrong");
+        }
+
+        document.getElementById("btn-next").style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizData.length) {
+            loadQuestion();
+        } else {
+            // Quiz beendet
+            document.getElementById("progress").style.width = "100%";
+            document.getElementById("quiz-view").style.display = "none";
+            document.getElementById("result-view").style.display = "block";
+        }
+    }
+
+    function restartQuiz() {
+        currentQuestionIndex = 0;
+        document.getElementById("quiz-view").style.display = "block";
+        document.getElementById("result-view").style.display = "none";
+        loadQuestion();
+    }
+
+    // Initialer Start beim Laden der Seite
+    window.onload = loadQuestion;
+</script>
+
+</body>
+</html>
