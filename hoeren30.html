@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch Lernen - Audio Hörverständnis</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --text-color: #333;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1.4rem;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Audio-Bereich */
+        .audio-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .audio-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .audio-btn:hover {
+            background-color: #357abd;
+            transform: scale(1.05);
+        }
+
+        .audio-label {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        /* Antwortmöglichkeiten */
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #475569;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Völlig neutraler Hover-Effekt gegen Vorab-Spoiler */
+        .option-btn:hover:not(:disabled) {
+            border-color: #94a3b8;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .option-badge {
+            background-color: #f1f5f9;
+            color: #64748b;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin-right: 12px;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* Auflösung erst nach der Auswahl */
+        .option-btn.correct {
+            border-color: var(--success-color) !important;
+            background-color: #e8f8f0 !important;
+            color: #1e7e34 !important;
+            font-weight: 600;
+        }
+        .option-btn.correct .option-badge {
+            background-color: var(--success-color) !important;
+            color: white !important;
+            border-color: var(--success-color) !important;
+        }
+
+        .option-btn.wrong {
+            border-color: var(--error-color) !important;
+            background-color: #fde8e8 !important;
+            color: #bd2130 !important;
+            animation: shake 0.3s ease;
+        }
+        .option-btn.wrong .option-badge {
+            background-color: var(--error-color) !important;
+            color: white !important;
+            border-color: var(--error-color) !important;
+        }
+
+        /* Feedback-Box */
+        .feedback-box {
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            display: none;
+            border-left: 4px solid #cbd5e1;
+        }
+        .feedback-box.correct { border-left-color: var(--success-color); }
+        .feedback-box.wrong { border-left-color: var(--error-color); }
+
+        .feedback-title { font-weight: bold; margin-bottom: 4px; }
+
+        /* Steuerung */
+        .action-zone {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-control {
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-reset { background-color: #e2e8f0; color: #475569; flex: 1; }
+        .btn-reset:hover { background-color: #cbd5e1; }
+
+        .btn-next { background-color: var(--primary-color); color: white; flex: 2; display: none; }
+        .btn-next:hover { background-color: #357abd; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        @media (max-width: 480px) {
+            .quiz-container { padding: 15px; }
+            .audio-section { padding: 15px; }
+            .audio-btn { width: 60px; height: 60px; font-size: 1.5rem; }
+            .option-btn { padding: 12px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h2>Audio-Hörverständnis</h2>
+    <div class="progress-text" id="progress-info">Aufgabe 1 von 6</div>
+
+    <div class="audio-section">
+        <button class="audio-btn" onclick="playAudio()">🔊</button>
+        <div class="audio-label">Satz anhören</div>
+    </div>
+
+    <div class="options-list" id="options-box">
+        <!-- Wird dynamisch befüllt -->
+    </div>
+
+    <div class="feedback-box" id="feedback-zone">
+        <div class="feedback-title" id="feedback-status">Ergebnis</div>
+        <div id="feedback-text">Erklärung</div>
+    </div>
+
+    <div class="action-zone">
+        <button class="btn-control btn-reset" onclick="restartQuiz()">Neustart</button>
+        <button class="btn-control btn-next" id="next-btn" onclick="nextQuestion()">Nächste Aufgabe</button>
+    </div>
+</div>
+
+<script>
+    const quizTasks = [
+        {
+            russianText: "Завтра у меня будет две пары, потом окно.",
+            options: [
+                "Morgen werde ich zwei Paare treffen und dann am Fenster stehen.",
+                "Morgen habe ich zwei Doppelstunden Unterricht und danach eine Freistunde.",
+                "Morgen fallen zwei Doppelstunden aus, weil ein Fenster repariert wird."
+            ],
+            correct: 1,
+            explanation: "Richtig! 'две пары' steht für zwei Doppelstunden (3 Stunden Unterricht) und 'окno' beschreibt die anschließende Freistunde."
+        },
+        {
+            russianText: "У меня сегодня окно, я пойду пить кофе.",
+            options: [
+                "Ich habe heute eine Freistunde, ich gehe Kaffee trinken.",
+                "Ich muss heute das Fenster putzen, danach trinke ich Kaffee.",
+                "Mein Unterricht fällt heute komplett aus, ich bleibe im Café."
+            ],
+            correct: 0,
+            explanation: "Exzellent! 'У меня окно' bedeutet 'Ich habe eine Freistunde'. Diese nutzt man perfekt für eine Kaffeepause."
+        },
+        {
+            russianText: "Какая длинная пара!",
+            options: [
+                "Was für ein schönes Pärchen!",
+                "Das Fenster ist aber sehr breit!",
+                "Was für eine lange Doppelstunde!"
+            ],
+            correct: 2,
+            explanation: "Stimmt! Im universitären Alltag drückt dieser Stoßseufzer aus, dass sich die 90 Minuten der Doppelstunde (пара) in die Länge ziehen."
+        },
+        {
+            russianText: "Профессор, когда у нас окно?",
+            options: [
+                "Professor, wann bekommen wir ein neues Fenster?",
+                "Professor, wann haben wir eine Freistunde?",
+                "Professor, wann ist der Unterricht zu Ende?"
+            ],
+            correct: 1,
+            explanation: "Korrekt! Die Studierenden fragen nach einer unterrichtsfreien Lücke im Tagesverlauf."
+        },
+        {
+            russianText: "Сегодня у меня нет пар.",
+            options: [
+                "Heute habe ich keinen Unterricht (keine Doppelstunden).",
+                "Heute habe ich kein Fenster geöffnet.",
+                "Heute lerne ich nicht mit meinem Partner."
+            ],
+            correct: 0,
+            explanation: "Wunderbar! Wenn man 'keine пар' (Plural von пара) hat, bedeutet das, dass man an diesem Tag schulfrei bzw. vorlesungsfrei hat."
+        },
+        {
+            russianText: "Смотри, это новое окно в расписании.",
+            options: [
+                "Schau mal, das ist ein neues Fenster im Klassenzimmer.",
+                "Schau mal, das ist eine neue Freistunde im Stundenplan.",
+                "Schau mal, das ist ein neues Fach im Zeugnis."
+            ],
+            correct: 1,
+            explanation: "Genau! 'Расписание' ist der Stundenplan. Ein 'окно в расписании' ist eine dort neu entstandene Freistunde."
+        }
+    ];
+
+    let currentTaskIndex = 0;
+    let hasAnswered = false;
+
+    function loadTask() {
+        hasAnswered = false;
+        const currentData = quizTasks[currentTaskIndex];
+
+        document.getElementById("progress-info").innerText = `Aufgabe ${currentTaskIndex + 1} von ${quizTasks.length}`;
+        
+        const optionsBox = document.getElementById("options-box");
+        optionsBox.innerHTML = "";
+        const badges = ["A", "B", "C"];
+
+        currentData.options.forEach((optionText, index) => {
+            const button = document.createElement("button");
+            button.className = "option-btn";
+            button.id = `opt-${index}`;
+            button.onclick = () => checkAnswer(index);
+
+            const badge = document.createElement("span");
+            badge.className = "option-badge";
+            badge.innerText = badges[index];
+
+            const textNode = document.createTextNode(optionText);
+
+            button.appendChild(badge);
+            button.appendChild(textNode);
+            optionsBox.appendChild(button);
+        });
+
+        document.getElementById("feedback-zone").style.display = "none";
+        document.getElementById("next-btn").style.display = "none";
+        
+        // Automatisch abspielen beim Aufgabenwechsel verhindern, um den Nutzer nicht zu erschrecken
+    }
+
+    function playAudio() {
+        // Nutzen der Web Speech API für echtes, barrierefreies Text-to-Speech
+        if ('speechSynthesis' in window) {
+            // Eventuell laufende Sprachausgaben stoppen
+            window.speechSynthesis.cancel();
+
+            const textToSpeak = quizTasks[currentTaskIndex].russianText;
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            
+            // Russische Sprachausgabe erzwingen
+            utterance.lang = 'ru-RU';
+            utterance.rate = 0.85; // Leicht verlangsamt für Schüler
+
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("Die Sprachausgabe wird von deinem Browser leider nicht unterstützt. Bitte nutze Chrome, Safari oder Firefox.");
+        }
+    }
+
+    function checkAnswer(selectedIndex) {
+        if (hasAnswered) return;
+        hasAnswered = true;
+
+        const currentData = quizTasks[currentTaskIndex];
+        const isCorrect = (selectedIndex === currentData.correct);
+
+        const feedbackZone = document.getElementById("feedback-zone");
+        const feedbackStatus = document.getElementById("feedback-status");
+        const feedbackText = document.getElementById("feedback-text");
+
+        const allButtons = document.querySelectorAll(".option-btn");
+        allButtons.forEach(btn => btn.disabled = true);
+
+        const selectedButton = document.getElementById(`opt-${selectedIndex}`);
+        if (isCorrect) {
+            selectedButton.classList.add("correct");
+            feedbackStatus.innerText = "✓ Richtig verstanden!";
+            feedbackZone.className = "feedback-box correct";
+        } else {
+            selectedButton.classList.add("wrong");
+            feedbackStatus.innerText = "⚡ Knapp daneben!";
+            feedbackZone.className = "feedback-box wrong";
+            
+            // Richtige Antwort einblenden
+            document.getElementById(`opt-${currentData.correct}`).classList.add("correct");
+        }
+
+        feedbackText.innerText = currentData.explanation;
+        feedbackZone.style.display = "block";
+        document.getElementById("next-btn").style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentTaskIndex++;
+        if (currentTaskIndex < quizTasks.length) {
+            loadTask();
+        } else {
+            alert("🎉 Unglaublich! Du hast das Hörverständnis komplett abgeschlossen und alle Nuancen verstanden.");
+            restartQuiz();
+        }
+    }
+
+    function restartQuiz() {
+        currentTaskIndex = 0;
+        loadTask();
+    }
+
+    window.onload = loadTask;
+</script>
+
+</body>
+</html>
