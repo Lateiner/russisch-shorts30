@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch Lernen - Leseverständnis</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --text-color: #333;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1.4rem;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .question-card {
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            color: #1e293b;
+            margin-bottom: 25px;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        /* Völlig neutrale Antwort-Buttons vor dem Anklicken */
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #475569;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Farbneutraler Hover-Effekt zur Vermeidung von Spoilern */
+        .option-btn:hover:not(:disabled) {
+            border-color: #94a3b8;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .option-badge {
+            background-color: #f1f5f9;
+            color: #64748b;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin-right: 12px;
+            border: 1px solid #cbd5e1;
+            transition: all 0.15s ease;
+        }
+
+        /* ERST NACH DEM ANKLICKEN: Farbliche Auswertung */
+        .option-btn.correct {
+            border-color: var(--success-color) !important;
+            background-color: #e8f8f0 !important;
+            color: #1e7e34 !important;
+            font-weight: 600;
+        }
+        .option-btn.correct .option-badge {
+            background-color: var(--success-color) !important;
+            color: white !important;
+            border-color: var(--success-color) !important;
+        }
+
+        .option-btn.wrong {
+            border-color: var(--error-color) !important;
+            background-color: #fde8e8 !important;
+            color: #bd2130 !important;
+            animation: shake 0.3s ease;
+        }
+        .option-btn.wrong .option-badge {
+            background-color: var(--error-color) !important;
+            color: white !important;
+            border-color: var(--error-color) !important;
+        }
+
+        /* Feedback-Erklärung */
+        .feedback-box {
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            display: none;
+            border-left: 4px solid #cbd5e1;
+        }
+        .feedback-box.correct { border-left-color: var(--success-color); }
+        .feedback-box.wrong { border-left-color: var(--error-color); }
+
+        .feedback-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        /* Steuerung */
+        .action-zone {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-control {
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-reset {
+            background-color: #e2e8f0;
+            color: #475569;
+            flex: 1;
+        }
+
+        .btn-reset:hover {
+            background-color: #cbd5e1;
+        }
+
+        .btn-next {
+            background-color: var(--primary-color);
+            color: white;
+            flex: 2;
+            display: none;
+        }
+
+        .btn-next:hover {
+            background-color: #357abd;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        @media (max-width: 480px) {
+            .quiz-container { padding: 15px; }
+            .question-card { font-size: 1.05rem; padding: 15px; }
+            .option-btn { padding: 12px; font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h2>Leseverständnis</h2>
+    <div class="progress-text" id="progress-info">Frage 1 von 3</div>
+
+    <div class="question-card" id="question-text">Lade Frage...</div>
+
+    <div class="options-list" id="options-box">
+        <!-- Wird dynamisch mit Buttons gefüllt -->
+    </div>
+
+    <div class="feedback-box" id="feedback-zone">
+        <div class="feedback-title" id="feedback-status">Ergebnis</div>
+        <div id="feedback-text">Erklärung</div>
+    </div>
+
+    <div class="action-zone">
+        <button class="btn-control btn-reset" onclick="restartQuiz()">Neustart</button>
+        <button class="btn-control btn-next" id="next-btn" onclick="nextQuestion()">Nächste Frage</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        {
+            question: "Wenn ein Professor sagt: „У меня сегодня окно“, was macht er dann höchstwahrscheinlich in dieser Zeit?",
+            options: [
+                "Er kauft ein neues Fenster für sein Büro.",
+                "Er hat eine Freistunde und korrigiert vielleicht Arbeiten oder trinkt Kaffee.",
+                "Er unterrichtet eine Doppelstunde."
+            ],
+            correct: 1, // Index B
+            explanation: "Richtig! 'Окно' bedeutet im universitären Kontext Freistunde. Der Professor nutzt diese unterrichtsfreie Zeit für Pausen oder administrative Arbeiten."
+        },
+        {
+            question: "An welchen Orten in Russland wird man der Sonderbedeutung des Wortes „окно“ am wahrscheinlichsten begegnen?",
+            options: [
+                "Auf einer Baustelle oder in einem Baumarkt.",
+                "In einer russischen Schule oder an einer russischen Universität.",
+                "In einem Restaurant oder beim Einkaufen."
+            ],
+            correct: 1, // Index B
+            explanation: "Korrekt! Diese spezifische umgangssprachliche Bedeutung von 'окно' ist fest im russischen Bildungssystem verankert."
+        },
+        {
+            question: "Was genau versteht man im russischen Bildungsalltag unter dem Begriff „пары“?",
+            options: [
+                "Unterrichtseinheiten, die als Doppelstunden (meist 90 Minuten) organisiert sind.",
+                "Zwei Schüler, die eine gemeinsame Hausarbeit vorbereiten müssen.",
+                "Die Pausenaufsicht durch Lehrkräfte auf dem Flur."
+            ],
+            correct: 0, // Index A
+            explanation: "Genau! 'Пара' leitet sich vom Wort für Paar ab und bezeichnet an russischen Hochschulen zwei zusammenhängende Unterrichtsstunden."
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let hasAnswered = false;
+
+    function loadQuestion() {
+        hasAnswered = false;
+        const currentData = quizData[currentQuestionIndex];
+
+        document.getElementById("progress-info").innerText = `Frage ${currentQuestionIndex + 1} von ${quizData.length}`;
+        document.getElementById("question-text").innerText = currentData.question;
+
+        const optionsBox = document.getElementById("options-box");
+        optionsBox.innerHTML = "";
+
+        const badges = ["A", "B", "C"];
+
+        currentData.options.forEach((optionText, index) => {
+            const button = document.createElement("button");
+            button.className = "option-btn";
+            button.id = `opt-${index}`;
+            button.onclick = () => checkAnswer(index);
+
+            const badge = document.createElement("span");
+            badge.className = "option-badge";
+            badge.innerText = badges[index];
+
+            const textNode = document.createTextNode(optionText);
+
+            button.appendChild(badge);
+            button.appendChild(textNode);
+            optionsBox.appendChild(button);
+        });
+
+        document.getElementById("feedback-zone").style.display = "none";
+        document.getElementById("next-btn").style.display = "none";
+    }
+
+    function checkAnswer(selectedIndex) {
+        if (hasAnswered) return;
+        hasAnswered = true;
+
+        const currentData = quizData[currentQuestionIndex];
+        const isCorrect = (selectedIndex === currentData.correct);
+
+        const feedbackZone = document.getElementById("feedback-zone");
+        const feedbackStatus = document.getElementById("feedback-status");
+        const feedbackText = document.getElementById("feedback-text");
+
+        // Alle Antwortbuttons deaktivieren
+        const allButtons = document.querySelectorAll(".option-btn");
+        allButtons.forEach(btn => btn.disabled = true);
+
+        // Ausgewählten Button einfärben
+        const selectedButton = document.getElementById(`opt-${selectedIndex}`);
+        if (isCorrect) {
+            selectedButton.classList.add("correct");
+            feedbackStatus.innerText = "✓ Richtig!";
+            feedbackZone.className = "feedback-box correct";
+        } else {
+            selectedButton.classList.add("wrong");
+            feedbackStatus.innerText = "⚡ Nicht ganz!";
+            feedbackZone.className = "feedback-box wrong";
+            
+            // Die richtige Option zusätzlich grün hervorheben
+            document.getElementById(`opt-${currentData.correct}`).classList.add("correct");
+        }
+
+        feedbackText.innerText = currentData.explanation;
+        feedbackZone.style.display = "block";
+        document.getElementById("next-btn").style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizData.length) {
+            loadQuestion();
+        } else {
+            alert("🎉 Ausgezeichnet! Du hast alle Fragen zum Leseverständnis richtig beantwortet.");
+            restartQuiz();
+        }
+    }
+
+    function restartQuiz() {
+        currentQuestionIndex = 0;
+        loadQuestion();
+    }
+
+    window.onload = loadQuestion;
+</script>
+
+</body>
+</html>
