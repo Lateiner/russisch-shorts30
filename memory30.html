@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch Lernen - Vokabel Memory</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ecc71;
+            --text-color: #333;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --memory-back: #34495e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            width: 100%;
+            max-width: 650px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1.4rem;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #555;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            background: #eef4fa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Das Memory-Gitternetz */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+            perspective: 1000px; /* Ermöglicht 3D-Dreheffekt */
+        }
+
+        /* Die einzelne Memory-Karte */
+        .memory-card {
+            aspect-ratio: 1 / 1; /* Perfekt quadratisch */
+            position: relative;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease, opacity 0.8s ease-out;
+        }
+
+        /* Zustand: Karte umgedreht */
+        .memory-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        /* Zustand: Paar gefunden (Langsames Verschwinden) */
+        .memory-card.matched {
+            transform: rotateY(180deg);
+            opacity: 0;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* Vorder- und Rückseite der Karte */
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        /* Rückseite (Verdeckter Zustand - völlig farbneutral) */
+        .card-back {
+            background-color: var(--memory-back);
+            border: 2px solid #2c3e50;
+            color: white;
+        }
+        
+        .card-back::after {
+            content: "?";
+            font-size: 1.8rem;
+            opacity: 0.3;
+        }
+
+        /* Vorderseite (Aufgedeckter Zustand) */
+        .card-front {
+            background-color: #fff;
+            border: 3px solid var(--primary-color);
+            color: #1e293b;
+            transform: rotateY(180deg);
+            word-break: break-word;
+        }
+
+        /* Spezielle Rahmenfarbe bei Erfolg direkt vorm Ausblenden */
+        .memory-card.flipped-success .card-front {
+            border-color: var(--success-color);
+            background-color: #f0fdf4;
+            color: #1e7e34;
+        }
+
+        /* Steuerung */
+        .action-zone {
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-reset {
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #e2e8f0;
+            color: #475569;
+            transition: background 0.2s;
+        }
+
+        .btn-reset:hover {
+            background-color: #cbd5e1;
+        }
+
+        /* Responsive Anpassung für kleinere Smartphones */
+        @media (max-width: 480px) {
+            .quiz-container { padding: 15px; }
+            .memory-grid { gap: 8px; }
+            .card-face { font-size: 0.8rem; padding: 2px; }
+            .card-back::after { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h2>Vokabel-Memory</h2>
+    <div class="instruction">Finde die 6 zusammengehörigen Paare aus dem Unterrichtstext!</div>
+
+    <div class="memory-grid" id="game-board">
+        <!-- Karten werden dynamisch per JS erzeugt -->
+    </div>
+
+    <div class="action-zone">
+        <button class="btn-reset" onclick="initGame()">Neustart</button>
+    </div>
+</div>
+
+<script>
+    // Die 6 logischen Paare (insgesamt 12 Karten)
+    const cardPairs = [
+        { id: 1, text: "окно\n(im Alltag)" },
+        { id: 1, text: "Fenster" },
+        { id: 2, text: "окно\n(an der Uni)" },
+        { id: 2, text: "Freistunde" },
+        { id: 3, text: "пары" },
+        { id: 3, text: "Doppelstunden" },
+        { id: 4, text: "у меня окно" },
+        { id: 4, text: "Ich habe eine Freistunde" },
+        { id: 5, text: "две пары" },
+        { id: 5, text: "Zwei Blöcke (3 Stunden)" },
+        { id: 6, text: "Stundenplan" },
+        { id: 6, text: "расписание" }
+    ];
+
+    let firstSelectedCard = null;
+    let secondSelectedCard = null;
+    let lockBoard = false;
+    let matchesFound = 0;
+
+    function initGame() {
+        const board = document.getElementById("game-board");
+        board.innerHTML = "";
+        firstSelectedCard = null;
+        secondSelectedCard = null;
+        lockBoard = false;
+        matchesFound = 0;
+
+        // Karten vor dem Platzieren zufällig mischen (Fisher-Yates Shuffle)
+        const shuffledCards = [...cardPairs];
+        for (let i = shuffledCards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledCards[i], shuffledCards[j]] = [shuffledCards[j], shuffledCards[i]];
+        }
+
+        // HTML-Elemente für die Karten bauen
+        shuffledCards.forEach((cardData) => {
+            const card = document.createElement("div");
+            card.className = "memory-card";
+            card.dataset.pairId = cardData.id;
+
+            const frontFace = document.createElement("div");
+            frontFace.className = "card-face card-front";
+            // Ersetzt Zeilenumbrüche im Text sauber in HTML
+            frontFace.innerHTML = cardData.text.replace("\n", "<br>");
+
+            const backFace = document.createElement("div");
+            backFace.className = "card-face card-back";
+
+            card.appendChild(frontFace);
+            card.appendChild(backFace);
+            
+            card.onclick = () => flipCard(card);
+            board.appendChild(card);
+        });
+    }
+
+    function flipCard(clickedCard) {
+        // Klick-Sperren prüfen (wenn zwei Karten offen sind oder Karte schon gelöst/gewählt ist)
+        if (lockBoard) return;
+        if (clickedCard === firstSelectedCard) return;
+        if (clickedCard.classList.contains("matched")) return;
+
+        clickedCard.classList.add("flipped");
+
+        if (!firstSelectedCard) {
+            // Erste Karte des aktuellen Versuchs
+            firstSelectedCard = clickedCard;
+            return;
+        }
+
+        // Zweite Karte des aktuellen Versuchs
+        secondSelectedCard = clickedCard;
+        checkForMatch();
+    }
+
+    function checkForMatch() {
+        const isMatch = firstSelectedCard.dataset.pairId === secondSelectedCard.dataset.pairId;
+
+        if (isMatch) {
+            disableCards();
+        } else {
+            unflipCards();
+        }
+    }
+
+    function disableCards() {
+        lockBoard = true;
+        matchesFound++;
+
+        // Visuelles Feedback für richtiges Paar kurz vor dem Verschwinden aktivieren
+        firstSelectedCard.classList.add("flipped-success");
+        secondSelectedCard.classList.add("flipped-success");
+
+        // Nach einer kurzen Pause das langsame Verschwinden starten
+        setTimeout(() => {
+            firstSelectedCard.classList.add("matched");
+            secondSelectedCard.classList.add("matched");
+
+            resetTurn();
+
+            // Prüfen, ob das Spiel vollständig beendet ist
+            if (matchesFound === cardPairs.length / 2) {
+                setTimeout(() => {
+                    alert("🎉 Großartig! Du hast alle Paare gefunden und die Begriffe erfolgreich zugeordnet.");
+                }, 800);
+            }
+        }, 600);
+    }
+
+    function unflipCards() {
+        lockBoard = true;
+
+        // Wenn falsch, nach einer Sekunde wieder umdrehen
+        setTimeout(() => {
+            firstSelectedCard.classList.remove("flipped");
+            secondSelectedCard.classList.remove("flipped");
+            resetTurn();
+        }, 1200);
+    }
+
+    function resetTurn() {
+        [firstSelectedCard, secondSelectedCard] = [null, null];
+        lockBoard = false;
+    }
+
+    // Spiel beim Laden der Seite direkt generieren
+    window.onload = initGame;
+</script>
+
+</body>
+</html>
