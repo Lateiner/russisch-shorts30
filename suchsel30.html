@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch Lernen - Interaktives Wortgitter</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ecc71;
+            --text-color: #333;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --grid-size: 8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 550px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1.4rem;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #555;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            background: #eef4fa;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .game-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .wordsearch-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-size), 1fr);
+            gap: 6px;
+            width: 100%;
+            max-width: 360px;
+            aspect-ratio: 1 / 1;
+            background-color: #e2e8f0;
+            padding: 8px;
+            border-radius: 12px;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        .grid-cell {
+            background-color: #fff;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1e293b;
+            cursor: pointer;
+            transition: background-color 0.15s, color 0.15s;
+            text-transform: uppercase;
+        }
+
+        .grid-cell:hover:not(.selected):not(.found) {
+            background-color: #f1f5f9;
+        }
+
+        .grid-cell.selected {
+            background-color: #94a3b8;
+            color: white;
+        }
+
+        .grid-cell.found {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .word-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
+        .word-item {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #475569;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .word-item.found-item {
+            background-color: #e8f8f0;
+            border-color: var(--success-color);
+            color: #1e7e34;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .word-item.found-item::after {
+            content: "✓";
+            font-weight: bold;
+        }
+
+        .action-zone {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn-reset {
+            border: none;
+            border-radius: 8px;
+            padding: 12px 35px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #e2e8f0;
+            color: #475569;
+            transition: background 0.2s;
+        }
+
+        .btn-reset:hover {
+            background-color: #cbd5e1;
+        }
+
+        @media (max-width: 480px) {
+            .quiz-container { padding: 12px; }
+            .grid-cell { font-size: 1.1rem; }
+            .word-list { grid-template-columns: 1fr; gap: 6px; }
+            .word-item { padding: 6px 10px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h2>Interaktives Wortgitter</h2>
+    <div class="instruction">Ziehe mit der Maus oder dem Finger über die russischen Buchstaben!</div>
+
+    <div class="game-layout">
+        <div class="wordsearch-grid" id="search-grid"></div>
+        <div class="word-list" id="search-words-list"></div>
+    </div>
+
+    <div class="action-zone">
+        <button class="btn-reset" onclick="initGame()">Neustart</button>
+    </div>
+</div>
+
+<script>
+    const targetWords = [
+        { word: "ОКНО", translation: "Freistunde / Fenster", found: false },
+        { word: "ПАРЫ", translation: "Doppelstunden (Plural)", found: false },
+        { word: "ПАРА", translation: "Doppelstunde (Singular)", found: false },
+        { word: "УРОК", translation: "Unterricht", found: false },
+        { word: "ШКОЛА", translation: "Schule", found: false },
+        { word: "ВУЗ", translation: "Hochschule / Uni", found: false }
+    ];
+
+    // Zu 100% verifiziertes, fixes Buchstaben-Layout
+    const staticGrid = [
+        ['Ш', 'К', 'О', 'Л', 'А', 'Б', 'Г', 'Д'], // 0: ШКОЛА (waagerecht, Spalte 0-4)
+        ['Е', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М'],
+        ['П', 'А', 'Р', 'Ы', 'Н', 'О', 'П', 'Р'], // 2: ПАРЫ (waagerecht, Spalte 0-3)
+        ['С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш'],
+        ['П', 'А', 'Р', 'А', 'Щ', 'Ъ', 'Ы', 'Ь'], // 4: ПАРА (waagerecht, Spalte 0-3)
+        ['О', 'К', 'Н', 'О', 'Э', 'Ю', 'Я', 'А'], // 5: ОКНО (waagerecht, Spalte 0-3)
+        ['Б', 'В', 'Г', 'Д', 'У', 'Р', 'О', 'К'], // 6: УРОК (waagerecht, Spalte 4-7)
+        ['М', 'Н', 'О', 'П', 'Р', 'В', 'У', 'З']  // 7: ВУЗ (waagerecht, Spalte 5-7 ganz unten)
+    ];
+
+    // Exakte und fehlerfreie mathematische Koordinaten-Zuordnungen ("Reihe-Spalte")
+    const wordCoordinates = {
+        "ШКОЛА": ["0-0", "0-1", "0-2", "0-3", "0-4"],
+        "ПАРЫ":  ["2-0", "2-1", "2-2", "2-3"],
+        "ПАРА":  ["4-0", "4-1", "4-2", "4-3"],
+        "ОКНО":  ["5-0", "5-1", "5-2", "5-3"],
+        "УРОК":  ["6-4", "6-5", "6-6", "6-7"],
+        "ВУЗ":   ["7-5", "7-6", "7-7"]            // Liegt jetzt perfekt in der letzten Reihe ganz rechts
+    };
+
+    let isDrawing = false;
+    let selectedCells = [];
+
+    function initGame() {
+        isDrawing = false;
+        selectedCells = [];
+        targetWords.forEach(w => w.found = false);
+
+        renderWordList();
+
+        const gridContainer = document.getElementById("search-grid");
+        gridContainer.innerHTML = "";
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const cell = document.createElement("div");
+                cell.className = "grid-cell";
+                cell.innerText = staticGrid[r][c];
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+                cell.dataset.coord = `${r}-${c}`;
+
+                cell.onmousedown = (e) => startSelection(cell);
+                cell.onmouseenter = (e) => extendSelection(cell);
+                
+                gridContainer.appendChild(cell);
+            }
+        }
+
+        document.onmouseup = endSelection;
+
+        gridContainer.ontouchstart = (e) => {
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (element && element.classList.contains("grid-cell")) {
+                startSelection(element);
+            }
+        };
+
+        gridContainer.ontouchmove = (e) => {
+            if (!isDrawing) return;
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (element && element.classList.contains("grid-cell")) {
+                extendSelection(element);
+            }
+        };
+
+        gridContainer.ontouchend = endSelection;
+    }
+
+    function startSelection(cell) {
+        isDrawing = true;
+        selectedCells = [cell];
+        cell.classList.add("selected");
+    }
+
+    function extendSelection(cell) {
+        if (!isDrawing) return;
+        if (selectedCells.includes(cell)) return;
+
+        const firstCell = selectedCells[0];
+        const rStart = parseInt(firstCell.dataset.row);
+        const cStart = parseInt(firstCell.dataset.col);
+        const rCurrent = parseInt(cell.dataset.row);
+        const cCurrent = parseInt(cell.dataset.col);
+
+        if (rStart === rCurrent || cStart === cCurrent) {
+            cell.classList.add("selected");
+            selectedCells.push(cell);
+        }
+    }
+
+    function endSelection() {
+        if (!isDrawing) return;
+        isDrawing = false;
+
+        const selectedWord = selectedCells.map(cell => cell.innerText).join("");
+        const reverseWord = selectedWord.split("").reverse().join("");
+
+        let foundWordKey = null;
+
+        targetWords.forEach(w => {
+            if (!w.found && (w.word === selectedWord || w.word === reverseWord)) {
+                w.found = true;
+                foundWordKey = w.word;
+            }
+        });
+
+        if (foundWordKey) {
+            const coords = wordCoordinates[foundWordKey];
+            const allCellElements = document.querySelectorAll(".grid-cell");
+            
+            allCellElements.forEach(cell => {
+                if (coords.includes(cell.dataset.coord)) {
+                    cell.classList.remove("selected");
+                    cell.classList.add("found");
+                }
+            });
+            renderWordList();
+            checkGameWin();
+        } else {
+            selectedCells.forEach(cell => cell.classList.remove("selected"));
+        }
+
+        selectedCells = [];
+    }
+
+    function renderWordList() {
+        const listContainer = document.getElementById("search-words-list");
+        listContainer.innerHTML = "";
+
+        targetWords.forEach(w => {
+            const item = document.createElement("div");
+            item.className = w.found ? "word-item found-item" : "word-item";
+            item.innerHTML = `<span><strong>${w.word}</strong> (${w.translation})</span>`;
+            listContainer.appendChild(item);
+        });
+    }
+
+    function checkGameWin() {
+        const allFound = targetWords.every(w => w.found);
+        if (allFound) {
+            setTimeout(() => {
+                alert("🎉 Fantastisch! Du hast alle 6 russischen Wörter im Gitter entdeckt und das Suchsel komplett gelöst.");
+            }, 300);
+        }
+    }
+
+    window.onload = initGame;
+</script>
+
+</body>
+</html>
